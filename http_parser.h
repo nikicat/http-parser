@@ -128,6 +128,16 @@ struct http_parser {
   unsigned short http_minor;
   unsigned short status_code; /* responses only */
   unsigned char method;    /* requests only */
+  const char *header_field_mark;
+  const char *header_value_mark;
+  const char *fragment_mark;
+  const char *query_string_mark;
+  const char *schema_mark;
+  const char *host_mark;
+  const char *port_mark;
+  const char *path_mark;
+  const char *url_mark;
+
 
   /* 1 = Upgrade header was present and the parser has exited because of that.
    * 0 = No upgrade header present.
@@ -143,6 +153,9 @@ struct http_parser {
 
 struct http_parser_settings {
   http_cb      on_message_begin;
+  http_data_cb on_schema;
+  http_data_cb on_host;
+  http_data_cb on_port;
   http_data_cb on_path;
   http_data_cb on_query_string;
   http_data_cb on_url;

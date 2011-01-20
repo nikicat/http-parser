@@ -1606,9 +1606,9 @@ void
 test_scan (const struct message *r1, const struct message *r2, const struct message *r3)
 {
   char total[80*1024] = "\0";
-  char buf1[80*1024] = "\0";
-  char buf2[80*1024] = "\0";
-  char buf3[80*1024] = "\0";
+  char *buf1;
+  char *buf2;
+  char *buf3;
 
   strcat(total, r1->raw);
   strcat(total, r2->raw);
@@ -1637,16 +1637,13 @@ test_scan (const struct message *r1, const struct message *r2, const struct mess
         parser_init(type_both ? HTTP_BOTH : r1->type);
 
         buf1_len = i;
-        strncpy(buf1, total, buf1_len);
-        buf1[buf1_len] = 0;
+        buf1 = total;
 
         buf2_len = j - i;
-        strncpy(buf2, total+i, buf2_len);
-        buf2[buf2_len] = 0;
+        buf2 = total+i;
 
         buf3_len = total_len - j;
-        strncpy(buf3, total+j, buf3_len);
-        buf3[buf3_len] = 0;
+        buf3 = total+j;
 
         read = parse(buf1, buf1_len);
 

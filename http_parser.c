@@ -21,7 +21,7 @@
 #include <http_parser.h>
 #include <assert.h>
 #include <stddef.h>
-
+#include <string.h>
 
 #ifndef MIN
 # define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -38,17 +38,16 @@ do {                                                                 \
 
 #define MARK(FOR)                                                    \
 do {                                                                 \
-  /*printf("marking " #FOR " state=%d p=%s\n", state, p);*/              \
-  FOR##_mark = p;                                                    \
+  parser->FOR##_mark = p;                                            \
 } while (0)
 
 #define CALLBACK_NOCLEAR(FOR)                                        \
 do {                                                                 \
-  if (FOR##_mark) {                                                  \
+  if (parser->FOR##_mark) {                                          \
     if (settings->on_##FOR) {                                        \
       if (0 != settings->on_##FOR(parser,                            \
-                                 FOR##_mark,                         \
-                                 p - FOR##_mark))                    \
+                                 parser->FOR##_mark,                 \
+                                 p - parser->FOR##_mark))            \
       {                                                              \
         return (p - data);                                           \
       }                                                              \
@@ -59,8 +58,9 @@ do {                                                                 \
 
 #define CALLBACK(FOR)                                                \
 do {                                                                 \
+  /* fprintf(stderr, "callback " #FOR " at=%.10s len=%ld state=%d p=%.10s\n", parser->FOR##_mark, p- parser->FOR##_mark, state, p);              */\
   CALLBACK_NOCLEAR(FOR);                                             \
-  FOR##_mark = NULL;                                                 \
+  parser->FOR##_mark = NULL;                                         \
 } while (0)
 
 
@@ -340,45 +340,6 @@ size_t http_parser_execute (http_parser *parser,
     return 0;
   }
 
-  /* technically we could combine all of these (except for url_mark) into one
-     variable, saving stack space, but it seems more clear to have them
-     separated. */
-  const char *header_field_mark = 0;
-  const char *header_value_mark = 0;
-  const char *fragment_mark = 0;
-  const char *query_string_mark = 0;
-  const char *schema_mark = 0;
-  const char *host_mark = 0;
-  const char *port_mark = 0;
-  const char *path_mark = 0;
-  const char *url_mark = 0;
-
-  if (state == s_header_field)
-    header_field_mark = data;
-  if (state == s_header_value)
-    header_value_mark = data;
-  if (state == s_req_fragment)
-    fragment_mark = data;
-  if (state == s_req_query_string)
-    query_string_mark = data;
-  if (state == s_req_schema)
-    schema_mark = data;
-  if (state == s_req_host)
-    host_mark = data;
-  if (state == s_req_port)
-    port_mark = data;
-  if (state == s_req_path)
-    path_mark = data;
-  if (state == s_req_path || state == s_req_schema || state == s_req_schema_slash
-      || state == s_req_schema_slash_slash || state == s_req_host
-      || state == s_req_colon_before_port || state == s_req_port
-      || state == s_req_query_string_start || state == s_req_query_string
-      || state == s_req_host
-      || state == s_req_fragment_start || state == s_req_fragment)
-    url_mark = data;
-
-  char remove_me[10000] = {0,};
-  char remove_me_old[10000] = {0,};
   for (p=data, pe=data+len; p != pe; p++) {
     ch = *p;
 
@@ -1576,16 +1537,6 @@ size_t http_parser_execute (http_parser *parser,
         goto error;
     }
   }
-
-  CALLBACK_NOCLEAR(header_field);
-  CALLBACK_NOCLEAR(header_value);
-  CALLBACK_NOCLEAR(fragment);
-  CALLBACK_NOCLEAR(query_string);
-  CALLBACK_NOCLEAR(schema);
-  CALLBACK_NOCLEAR(host);
-  CALLBACK_NOCLEAR(port);
-  CALLBACK_NOCLEAR(path);
-  CALLBACK_NOCLEAR(url);
 
   parser->state = state;
   parser->header_state = header_state;
