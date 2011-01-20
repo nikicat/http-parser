@@ -44,6 +44,9 @@ struct message {
   enum http_parser_type type;
   enum http_method method;
   int status_code;
+  char request_schema[MAX_ELEMENT_SIZE];
+  char request_host[MAX_ELEMENT_SIZE];
+  char request_port[MAX_ELEMENT_SIZE];
   char request_path[MAX_ELEMENT_SIZE];
   char request_url[MAX_ELEMENT_SIZE];
   char fragment[MAX_ELEMENT_SIZE];
@@ -88,6 +91,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/test"
   ,.request_url= "/test"
   ,.num_headers= 3
@@ -119,6 +125,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/favicon.ico"
   ,.request_url= "/favicon.ico"
   ,.num_headers= 8
@@ -148,6 +157,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/dumbfuck"
   ,.request_url= "/dumbfuck"
   ,.num_headers= 1
@@ -169,6 +181,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= "page=1"
   ,.fragment= "posts-17408"
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/forums/1/topics/2375"
   /* XXX request url does include fragment? */
   ,.request_url= "/forums/1/topics/2375?page=1#posts-17408"
@@ -188,6 +203,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/get_no_headers_no_body/world"
   ,.request_url= "/get_no_headers_no_body/world"
   ,.num_headers= 0
@@ -207,6 +225,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/get_one_header_no_body"
   ,.request_url= "/get_one_header_no_body"
   ,.num_headers= 1
@@ -230,6 +251,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/get_funky_content_length_body_hello"
   ,.request_url= "/get_funky_content_length_body_hello"
   ,.num_headers= 1
@@ -255,6 +279,9 @@ const struct message requests[] =
   ,.method= HTTP_POST
   ,.query_string= "q=search"
   ,.fragment= "hey"
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/post_identity_body_world"
   ,.request_url= "/post_identity_body_world?q=search#hey"
   ,.num_headers= 3
@@ -282,6 +309,9 @@ const struct message requests[] =
   ,.method= HTTP_POST
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/post_chunked_all_your_base"
   ,.request_url= "/post_chunked_all_your_base"
   ,.num_headers= 1
@@ -308,6 +338,9 @@ const struct message requests[] =
   ,.method= HTTP_POST
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/two_chunks_mult_zero_end"
   ,.request_url= "/two_chunks_mult_zero_end"
   ,.num_headers= 1
@@ -336,6 +369,9 @@ const struct message requests[] =
   ,.method= HTTP_POST
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/chunked_w_trailing_headers"
   ,.request_url= "/chunked_w_trailing_headers"
   ,.num_headers= 3
@@ -364,6 +400,9 @@ const struct message requests[] =
   ,.method= HTTP_POST
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/chunked_w_bullshit_after_length"
   ,.request_url= "/chunked_w_bullshit_after_length"
   ,.num_headers= 1
@@ -384,6 +423,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= "foo=\"bar\""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/with_\"stupid\"_quotes"
   ,.request_url= "/with_\"stupid\"_quotes?foo=\"bar\""
   ,.num_headers= 0
@@ -410,6 +452,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/test"
   ,.request_url= "/test"
   ,.num_headers= 3
@@ -433,6 +478,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= "foo=bar?baz"
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/test.cgi"
   ,.request_url= "/test.cgi?foo=bar?baz"
   ,.num_headers= 0
@@ -480,6 +528,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/demo"
   ,.request_url= "/demo"
   ,.num_headers= 7
@@ -509,6 +560,9 @@ const struct message requests[] =
   ,.method= HTTP_CONNECT
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= "home0.netscape.com"
+  ,.request_port= "443"
   ,.request_path= ""
   ,.request_url= "home0.netscape.com:443"
   ,.num_headers= 2
@@ -531,6 +585,9 @@ const struct message requests[] =
   ,.method= HTTP_REPORT
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/test"
   ,.request_url= "/test"
   ,.num_headers= 0
@@ -550,6 +607,9 @@ const struct message requests[] =
   ,.method= HTTP_GET
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "/"
   ,.request_url= "/"
   ,.num_headers= 0
@@ -572,6 +632,9 @@ const struct message requests[] =
   ,.method= HTTP_MSEARCH
   ,.query_string= ""
   ,.fragment= ""
+  ,.request_schema= ""
+  ,.request_host= ""
+  ,.request_port= ""
   ,.request_path= "*"
   ,.request_url= "*"
   ,.num_headers= 3
@@ -948,6 +1011,30 @@ const struct message responses[] =
 };
 
 int
+request_schema_cb (http_parser *p, const char *buf, size_t len)
+{
+  assert(p == parser);
+  strncat(messages[num_messages].request_schema, buf, len);
+  return 0;
+}
+
+int
+request_host_cb (http_parser *p, const char *buf, size_t len)
+{
+  assert(p == parser);
+  strncat(messages[num_messages].request_host, buf, len);
+  return 0;
+}
+
+int
+request_port_cb (http_parser *p, const char *buf, size_t len)
+{
+  assert(p == parser);
+  strncat(messages[num_messages].request_port, buf, len);
+  return 0;
+}
+
+int
 request_path_cb (http_parser *p, const char *buf, size_t len)
 {
   assert(p == parser);
@@ -1072,6 +1159,9 @@ static http_parser_settings settings =
   {.on_message_begin = message_begin_cb
   ,.on_header_field = header_field_cb
   ,.on_header_value = header_value_cb
+  ,.on_schema = request_schema_cb
+  ,.on_host = request_host_cb
+  ,.on_port = request_port_cb
   ,.on_path = request_path_cb
   ,.on_url = request_url_cb
   ,.on_fragment = fragment_cb
@@ -1085,6 +1175,9 @@ static http_parser_settings settings_count_body =
   {.on_message_begin = message_begin_cb
   ,.on_header_field = header_field_cb
   ,.on_header_value = header_value_cb
+  ,.on_schema = request_schema_cb
+  ,.on_host = request_host_cb
+  ,.on_port = request_port_cb
   ,.on_path = request_path_cb
   ,.on_url = request_url_cb
   ,.on_fragment = fragment_cb
@@ -1098,6 +1191,9 @@ static http_parser_settings settings_null =
   {.on_message_begin = 0
   ,.on_header_field = 0
   ,.on_header_value = 0
+  ,.on_schema = 0
+  ,.on_host = 0
+  ,.on_port = 0
   ,.on_path = 0
   ,.on_url = 0
   ,.on_fragment = 0
@@ -1204,6 +1300,9 @@ message_eq (int index, const struct message *expected)
   assert(m->message_complete_cb_called);
 
 
+  MESSAGE_CHECK_STR_EQ(expected, m, request_schema);
+  MESSAGE_CHECK_STR_EQ(expected, m, request_host);
+  MESSAGE_CHECK_STR_EQ(expected, m, request_port);
   MESSAGE_CHECK_STR_EQ(expected, m, request_path);
   MESSAGE_CHECK_STR_EQ(expected, m, query_string);
   MESSAGE_CHECK_STR_EQ(expected, m, fragment);

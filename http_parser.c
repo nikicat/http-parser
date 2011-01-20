@@ -38,6 +38,7 @@ do {                                                                 \
 
 #define MARK(FOR)                                                    \
 do {                                                                 \
+  /*printf("marking " #FOR " state=%d p=%s\n", state, p);*/              \
   FOR##_mark = p;                                                    \
 } while (0)
 
@@ -216,6 +217,7 @@ enum state
   , s_req_schema_slash
   , s_req_schema_slash_slash
   , s_req_host
+  , s_req_colon_before_port
   , s_req_port
   , s_req_path
   , s_req_query_string_start
@@ -315,6 +317,7 @@ enum flags
 # define NEW_MESSAGE() start_state
 #endif
 
+#include "stdio.h"
 
 size_t http_parser_execute (http_parser *parser,
                             const http_parser_settings *settings,
@@ -344,6 +347,9 @@ size_t http_parser_execute (http_parser *parser,
   const char *header_value_mark = 0;
   const char *fragment_mark = 0;
   const char *query_string_mark = 0;
+  const char *schema_mark = 0;
+  const char *host_mark = 0;
+  const char *port_mark = 0;
   const char *path_mark = 0;
   const char *url_mark = 0;
 
@@ -355,15 +361,24 @@ size_t http_parser_execute (http_parser *parser,
     fragment_mark = data;
   if (state == s_req_query_string)
     query_string_mark = data;
+  if (state == s_req_schema)
+    schema_mark = data;
+  if (state == s_req_host)
+    host_mark = data;
+  if (state == s_req_port)
+    port_mark = data;
   if (state == s_req_path)
     path_mark = data;
   if (state == s_req_path || state == s_req_schema || state == s_req_schema_slash
-      || state == s_req_schema_slash_slash || state == s_req_port
+      || state == s_req_schema_slash_slash || state == s_req_host
+      || state == s_req_colon_before_port || state == s_req_port
       || state == s_req_query_string_start || state == s_req_query_string
       || state == s_req_host
       || state == s_req_fragment_start || state == s_req_fragment)
     url_mark = data;
 
+  char remove_me[10000] = {0,};
+  char remove_me_old[10000] = {0,};
   for (p=data, pe=data+len; p != pe; p++) {
     ch = *p;
 
@@ -649,6 +664,8 @@ size_t http_parser_execute (http_parser *parser,
 
         if (c >= 'a' && c <= 'z') {
           MARK(url);
+          MARK(schema);
+          MARK(host);
           state = s_req_schema;
           break;
         }
@@ -663,6 +680,7 @@ size_t http_parser_execute (http_parser *parser,
         if (c >= 'a' && c <= 'z') break;
 
         if (ch == ':') {
+          CALLBACK(schema);
           state = s_req_schema_slash;
           break;
         } else if (ch == '.') {
@@ -683,6 +701,7 @@ size_t http_parser_execute (http_parser *parser,
 
       case s_req_schema_slash_slash:
         STRICT_CHECK(ch != '/');
+        MARK(host);
         state = s_req_host;
         break;
 
@@ -693,9 +712,11 @@ size_t http_parser_execute (http_parser *parser,
         if ((ch >= '0' && ch <= '9') || ch == '.' || ch == '-') break;
         switch (ch) {
           case ':':
-            state = s_req_port;
+            CALLBACK(host);
+            state = s_req_colon_before_port;
             break;
           case '/':
+            CALLBACK(host);
             MARK(path);
             state = s_req_path;
             break;
@@ -704,6 +725,7 @@ size_t http_parser_execute (http_parser *parser,
              *   "GET http://foo.bar.com HTTP/1.1"
              * That is, there is no path.
              */
+            CALLBACK(host);
             CALLBACK(url);
             state = s_req_http_start;
             break;
@@ -713,11 +735,23 @@ size_t http_parser_execute (http_parser *parser,
         break;
       }
 
+      case s_req_colon_before_port:
+      {
+        if (ch >= '0' && ch <= '9') {
+          MARK(port);
+          state = s_req_port;
+          break;
+        }
+
+        goto error;
+      }
+
       case s_req_port:
       {
         if (ch >= '0' && ch <= '9') break;
         switch (ch) {
           case '/':
+            CALLBACK(port);
             MARK(path);
             state = s_req_path;
             break;
@@ -726,6 +760,7 @@ size_t http_parser_execute (http_parser *parser,
              *   "GET http://foo.bar.com:1234 HTTP/1.1"
              * That is, there is no path.
              */
+            CALLBACK(port);
             CALLBACK(url);
             state = s_req_http_start;
             break;
@@ -1546,6 +1581,9 @@ size_t http_parser_execute (http_parser *parser,
   CALLBACK_NOCLEAR(header_value);
   CALLBACK_NOCLEAR(fragment);
   CALLBACK_NOCLEAR(query_string);
+  CALLBACK_NOCLEAR(schema);
+  CALLBACK_NOCLEAR(host);
+  CALLBACK_NOCLEAR(port);
   CALLBACK_NOCLEAR(path);
   CALLBACK_NOCLEAR(url);
 
